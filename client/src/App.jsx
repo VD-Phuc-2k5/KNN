@@ -1,19 +1,40 @@
 import { useState } from "react";
+import { Button, Row, Container } from "react-bootstrap";
+import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
+import FileUpload from "./Components/FileUpload/FileUpload";
+import FeatureInput from "./Components/FeatureInput/FeatureInput";
+import { titles } from "./Data";
 
 function App() {
-  const [features, setFeatures] = useState(Array(30).fill(0)); // Adjust size based on your dataset
+  const [features, setFeatures] = useState(Array(30).fill(0));
   const [prediction, setPrediction] = useState(null);
   const [error, setError] = useState(null);
+  const [isFormValid, setIsFormValid] = useState(true);
 
-  const handleChange = (index, value) => {
+  // Handle the change of feature input values
+  const handleFeatureChange = (index, value) => {
     const newFeatures = [...features];
     newFeatures[index] = parseFloat(value);
     setFeatures(newFeatures);
   };
 
+  // Handle the file upload and set features
+  const handleFileUpload = (values) => {
+    setFeatures(values);
+  };
+
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const form = e.currentTarget;
+
+    // Validate the form
+    if (!form.checkValidity()) {
+      setIsFormValid(false);
+      return;
+    }
+
     setError(null);
     setPrediction(null);
 
@@ -33,32 +54,34 @@ function App() {
         setError(data.error);
       }
     } catch (err) {
-      setError(`Error connecting to the server: ${err}`);
+      setError(`Error connecting to the server: ${err.message}`);
     }
   };
 
   return (
-    <div className='App'>
-      <h1>Breast Cancer Prediction</h1>
-      <form onSubmit={handleSubmit}>
-        {features.map((feature, index) => (
-          <div key={index}>
-            <label>
-              Feature {index + 1}:
-              <input
-                type='number'
-                value={feature}
-                onChange={(e) => handleChange(index, e.target.value)}
-                required
-              />
-            </label>
-          </div>
-        ))}
-        <button type='submit'>Predict</button>
+    <Container className='App'>
+      <h1 className='mt-4'>Breast Cancer Prediction</h1>
+      <form noValidate onSubmit={handleSubmit}>
+        <FileUpload onFileUpload={handleFileUpload} setError={setError} />
+        <Row>
+          {titles.map((title, index) => (
+            <FeatureInput
+              key={index}
+              index={index}
+              title={title}
+              value={features[index]}
+              onChange={handleFeatureChange}
+              isFormValid={isFormValid}
+            />
+          ))}
+        </Row>
+        <Button type='submit' variant='primary'>
+          Predict
+        </Button>
       </form>
-      {prediction && <h2>Prediction: {prediction}</h2>}
+      {prediction && <h2 className='mt-4'>Prediction: {prediction}</h2>}
       {error && <h2 style={{ color: "red" }}>Error: {error}</h2>}
-    </div>
+    </Container>
   );
 }
 
